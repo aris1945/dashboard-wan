@@ -77,21 +77,7 @@ const SpbuPage = () => {
             />
           </div>
 
-          {/* Tombol Upload Excel */}
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            className="hidden" 
-            accept=".xlsx,.xls,.csv" 
-          />
-          <button 
-            onClick={() => fileInputRef.current.click()}
-            disabled={uploading}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition disabled:bg-gray-400"
-          >
-            {uploading ? 'Uploading...' : <><FileSpreadsheet size={18} /> Import Excel</>}
-          </button>
+          
         </div>
       </div>
 

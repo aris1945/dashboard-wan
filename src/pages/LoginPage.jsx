@@ -5,7 +5,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
+  const [nik, setNik] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,27 +13,60 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError(''); // Reset error lama
 
     try {
-      // 1. Request ke API Laravel
-      const response = await axios.post("http://127.0.0.1:8000/api/login", {
-        email: email,
-        password: password,
+      console.log("1. Mengirim Login...", { nik, password });
+
+      const response = await axios.post('http://127.0.0.1:8000/api/login', {
+        nik: nik,
+        password: password
       });
 
-      // 2. Ambil token dari response JSON Laravel
-      const token = response.data.access_token;
+      console.log("2. Respon Server Raw:", response);
 
-      // 3. Simpan token ke LocalStorage
-      localStorage.setItem("token", token);
+      // --- PERBAIKAN DI SINI ---
+      // Kita ambil langsung dari response.data
+      const data = response.data;
+      
+      // Ambil token. Sesuai log Anda, namanya adalah 'access_token'
+      const token = data.access_token; 
+      
+      // Ambil user.
+      const user = data.user;
 
-      // 4. Redirect ke Dashboard
-      navigate("/");
+      console.log("3. Token yang diambil:", token);
+      console.log("4. User yang diambil:", user);
+
+      // Cek Validasi
+      if (!token) {
+        throw new Error("Gagal: Backend mengirim respon, tapi 'access_token' tidak terbaca!");
+      }
+
+      // SIMPAN DATA
+      localStorage.setItem('token', token);
+      
+      // Pastikan user.role ada, jika tidak, default ke 'teknisi' agar tidak error
+      localStorage.setItem('role', user.role || 'teknisi'); 
+      localStorage.setItem('user_name', user.name);
+      
+      console.log("5. Penyimpanan Berhasil. Redirecting...");
+      
+      // REDIRECT MANUAL
+      window.location.href = '/';
+
     } catch (err) {
-      // Tampilkan pesan error dari backend
-      setError(err.response?.data?.message || "Login gagal.");
+      console.error("ERROR LOGIN:", err);
+      
+      // Tampilkan pesan error spesifik agar kita tahu salahnya dimana
+      if (err.response) {
+        // Error dari Server (Password salah, dll)
+        setError(err.response.data.message || 'Login Gagal dari Server');
+      } else {
+        // Error dari Kodingan React (Salah variabel)
+        setError('Error Aplikasi: ' + err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,7 +99,7 @@ const LoginPage = () => {
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
+                NIK
               </label>
               <div className="relative">
                 <User
@@ -74,12 +107,12 @@ const LoginPage = () => {
                   size={20}
                 />
                 <input
-                  type="email"
+                  type="text"
                   required
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                  placeholder="admin@wifi.id"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="masukan nik anda."
+                  value={nik}
+                  onChange={(e) => setNik(e.target.value)}
                 />
               </div>
             </div>
