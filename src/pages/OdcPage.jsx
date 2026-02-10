@@ -20,7 +20,7 @@ const OdcPage = () => {
 
     try {
       // Panggil API Laravel kita sendiri (bukan langsung ke Lensa)
-      const response = await axios.get('http://127.0.0.1:8000/api/odc-search', {
+      const response = await axios.get('http://192.168.100.126:8000/api/odc-search', {
         params: { name: search }
       });
 

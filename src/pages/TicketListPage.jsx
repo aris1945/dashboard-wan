@@ -2,11 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
   Ticket, Edit, Trash2, Search, X, ChevronLeft, ChevronRight, 
-  Save, Lock, Camera, Clock, CheckCircle, MapPin
+  Save, Clock, CheckCircle
 } from 'lucide-react';
 
+// --- KONFIGURASI URL ---
+// Ganti dengan IP Laptop Anda yang aktif (cek ipconfig)
+const API_BASE_URL = 'http://192.168.100.126:8000'; 
+
 const TicketListPage = () => {
-  // ... (State utama tickets, pagination, search TETAP SAMA) ...
+  // --- STATE UTAMA ---
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -15,8 +19,8 @@ const TicketListPage = () => {
 
   // --- STATE MODAL WORKLOG ---
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState(null); // Tiket yang sedang dibuka
-  const [logs, setLogs] = useState([]); // Riwayat log tiket tsb
+  const [selectedTicket, setSelectedTicket] = useState(null); 
+  const [logs, setLogs] = useState([]); 
   
   // Form Input Worklog Baru
   const [logForm, setLogForm] = useState({
@@ -26,38 +30,54 @@ const TicketListPage = () => {
   });
   const fileInputRef = useRef(null);
 
-  // ... (Fetch Tickets & Search TETAP SAMA) ...
-  const fetchTickets = async (url = 'http://127.0.0.1:8000/api/tickets') => {
-    // ... (kode fetch sama seperti sebelumnya) ...
+  // --- 1. FETCH DATA TIKET (DIPERBAIKI) ---
+  const fetchTickets = async (url) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const params = search ? { search } : {};
-      const response = await axios.get(url, { headers: { Authorization: `Bearer ${token}` }, params });
+      
+      // Gunakan URL yang diberikan pagination, atau default ke API local
+      // Jika url cuma '/tickets', axios base URL di main.jsx akan menanganinya
+      // Jika url lengkap (http://...), axios akan pakai itu
+      const endpoint = url || `${API_BASE_URL}/api/tickets`; 
+
+      const response = await axios.get(endpoint, { 
+        headers: { Authorization: `Bearer ${token}` }, 
+        params 
+      });
+      
       setTickets(response.data.data.data);
       setPagination(response.data.data); 
-    } catch (e) { console.error(e); } finally { setLoading(false); }
+    } catch (error) { 
+      console.error("Gagal ambil data:", error); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   useEffect(() => { fetchTickets(); }, []);
 
-  // --- BUKA MODAL WORKLOG ---
+  // --- 2. HANDLE SEARCH ---
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchTickets();
+  };
+
+  // --- 3. BUKA MODAL WORKLOG ---
   const handleOpenLogModal = async (ticketId) => {
     setIsLogModalOpen(true);
-    setLogs([]); // Reset log lama
-    setLogForm({ status: '', deskripsi: '', image: null }); // Reset form
+    setLogs([]); 
+    setLogForm({ status: '', deskripsi: '', image: null }); 
 
     try {
       const token = localStorage.getItem('token');
-      // Ambil detail tiket + logs dari API show
-      const res = await axios.get(`http://127.0.0.1:8000/api/tickets/${ticketId}`, {
+      const res = await axios.get(`${API_BASE_URL}/api/tickets/${ticketId}`, { 
         headers: { Authorization: `Bearer ${token}` }
       });
       
       setSelectedTicket(res.data.data);
       setLogs(res.data.data.logs || []);
-      
-      // Set default status form mengikuti status terakhir
       setLogForm(prev => ({ ...prev, status: res.data.data.status }));
 
     } catch (error) {
@@ -65,7 +85,7 @@ const TicketListPage = () => {
     }
   };
 
-  // --- HANDLE INPUT FORM LOG ---
+  // --- 4. HANDLE INPUT FORM LOG ---
   const handleLogChange = (e) => {
     setLogForm({ ...logForm, [e.target.name]: e.target.value });
   };
@@ -74,7 +94,7 @@ const TicketListPage = () => {
     setLogForm({ ...logForm, image: e.target.files[0] });
   };
 
-  // --- SUBMIT WORKLOG BARU ---
+  // --- 5. SUBMIT WORKLOG BARU ---
   const handleSubmitLog = async (e) => {
     e.preventDefault();
     if (!logForm.status || !logForm.deskripsi) return alert("Status dan Deskripsi wajib diisi!");
@@ -88,10 +108,10 @@ const TicketListPage = () => {
         formData.append('image', logForm.image);
       }
 
-      await axios.post(`http://127.0.0.1:8000/api/tickets/${selectedTicket.id}/log`, formData, {
+      await axios.post(`${API_BASE_URL}/api/tickets/${selectedTicket.id}/log`, formData, { 
         headers: { 
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data' // Wajib untuk upload file
+          'Content-Type': 'multipart/form-data' 
         }
       });
 
@@ -105,79 +125,151 @@ const TicketListPage = () => {
     }
   };
 
-  // ... (Handle Delete TETAP SAMA) ...
+  // --- 6. HAPUS TIKET ---
+  const handleDelete = async (id) => {
+    if(!confirm("Yakin hapus tiket ini?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/api/tickets/${id}`, { 
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchTickets(); 
+    } catch (error) {
+      alert("Gagal menghapus (Anda mungkin tidak memiliki izin)");
+    }
+  };
 
   return (
     <div className="p-6">
-      {/* ... (Header & Search Bar TETAP SAMA) ... */}
-       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+      
+      {/* HEADER & SEARCH BAR */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <Ticket className="text-blue-600" /> Daftar Tiket
         </h1>
-        {/* Search Input Disini */}
+        
+        <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
+          <input 
+            type="text" 
+            placeholder="Cari No. Tiket / Site..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border rounded-lg px-4 py-2 w-full md:w-64 focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+          <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">
+            <Search size={20} />
+          </button>
+        </form>
       </div>
 
       {/* TABEL DATA */}
       <div className="bg-white rounded-xl shadow border overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-100 text-gray-600 uppercase font-semibold">
-             <tr>
+        
+        {/* WRAPPER SCROLL (Tanpa Sticky) */}
+        <div className="overflow-x-auto pb-2"> {/* pb-2 agar scrollbar tidak terlalu mepet */}
+          
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-gray-100 text-gray-600 uppercase font-semibold">
+              <tr>
                 <th className="p-4">No. Tiket</th>
                 <th className="p-4">Unit</th>
-                <th className="p-4">Site</th>
+                <th className="p-4">Site / Lokasi</th>
                 <th className="p-4">Status</th>
-                <th className="p-4">Aksi</th>
-             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-             {tickets.map((ticket) => (
-                <tr key={ticket.id} className="hover:bg-gray-50">
-                   <td className="p-4 font-mono font-bold text-blue-600">{ticket.nomor_internal}</td>
-                   <td className="p-4">{ticket.unit}</td>
-                   <td className="p-4">{ticket.site_name}</td>
-                   <td className="p-4">
+                <th className="p-4">Petugas</th>
+                <th className="p-4 text-center">Aksi</th> {/* Tidak ada Sticky */}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {loading ? (
+                <tr><td colSpan="6" className="p-8 text-center text-gray-500">Memuat data...</td></tr>
+              ) : tickets.length === 0 ? (
+                <tr><td colSpan="6" className="p-8 text-center text-gray-500">Data tidak ditemukan.</td></tr>
+              ) : (
+                tickets.map((ticket) => (
+                  <tr key={ticket.id} className="hover:bg-gray-50 transition">
+                    <td className="p-4 font-mono font-bold text-blue-600">{ticket.nomor_internal}</td>
+                    <td className="p-4">{ticket.unit}</td>
+                    <td className="p-4">
+                      <div className="font-bold">{ticket.site_name}</div>
+                      <div className="text-xs text-gray-500">{ticket.site_id}</div>
+                    </td>
+                    <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                         ticket.status === 'Open' ? 'bg-green-100 text-green-700' : 
                         ticket.status === 'Closed' ? 'bg-gray-200 text-gray-700' : 'bg-yellow-100 text-yellow-700'
                       }`}>
-                        {ticket.status}
+                        {ticket.status || 'Open'}
                       </span>
-                   </td>
-                   <td className="p-4">
-                      {/* TOMBOL UPDATE / DETAIL */}
+                    </td>
+                    <td className="p-4 max-w-xs truncate text-gray-600" title={ticket.petugas}>
+                      {ticket.petugas}
+                    </td>
+
+                    {/* KOLOM AKSI (BIASA / TIDAK STICKY) */}
+                    <td className="p-4 flex justify-center gap-2">
                       <button 
                         onClick={() => handleOpenLogModal(ticket.id)}
                         className="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 flex items-center gap-1"
+                        title="Update Progress"
                       >
-                         <Edit size={16}/> {userRole === 'teknisi' ? 'Update' : 'Detail'}
+                         <Edit size={16}/> 
+                         <span className="hidden md:inline">{userRole === 'teknisi' ? 'Update' : 'Detail'}</span>
                       </button>
-                   </td>
-                </tr>
-             ))}
-          </tbody>
-        </table>
-        {/* Pagination Disini */}
+
+                      {(userRole === 'admin' || userRole === 'helpdesk') && (
+                        <button 
+                          onClick={() => handleDelete(ticket.id)} 
+                          className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200"
+                          title="Hapus"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination */}
+        <div className="p-4 flex justify-between items-center bg-gray-50 border-t">
+            <button 
+              disabled={!pagination.prev_page_url} 
+              onClick={() => fetchTickets(pagination.prev_page_url)}
+              className="flex items-center gap-1 px-3 py-1 rounded border bg-white disabled:opacity-50"
+            >
+              <ChevronLeft size={16}/> Prev
+            </button>
+            <span className="text-gray-500">Halaman {pagination.current_page} dari {pagination.last_page}</span>
+            <button 
+              disabled={!pagination.next_page_url} 
+              onClick={() => fetchTickets(pagination.next_page_url)}
+              className="flex items-center gap-1 px-3 py-1 rounded border bg-white disabled:opacity-50"
+            >
+              Next <ChevronRight size={16}/>
+            </button>
+        </div>
       </div>
 
-      {/* --- MODAL WORKLOG (NEW DESIGN) --- */}
+      {/* --- MODAL WORKLOG (SAMA SEPERTI SEBELUMNYA) --- */}
       {isLogModalOpen && selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 md:p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden">
             
-            {/* KIRI: INFORMASI TIKET & FORM UPDATE */}
+            {/* KIRI: FORM */}
             <div className="w-full md:w-1/2 p-6 overflow-y-auto border-r bg-gray-50">
                <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-800">{selectedTicket.nomor_internal}</h2>
                   <div className="text-sm text-gray-500">{selectedTicket.site_name}</div>
                </div>
 
-               {/* Detail Readonly */}
                <div className="bg-white p-4 rounded-lg border mb-6 text-sm space-y-2">
-                  <p><span className="font-semibold">Deskripsi Awal:</span> {selectedTicket.deskripsi}</p>
+                  <p><span className="font-semibold">Deskripsi:</span> {selectedTicket.deskripsi}</p>
                   <p><span className="font-semibold">Petugas:</span> {selectedTicket.petugas}</p>
                </div>
 
-               {/* FORM UPDATE (Hanya muncul jika tiket belum closed atau Admin mau reopen) */}
                {(selectedTicket.status !== 'Closed' || userRole === 'admin') && (
                  <form onSubmit={handleSubmitLog} className="space-y-4 bg-white p-4 rounded-lg border shadow-sm">
                     <h3 className="font-bold text-blue-600 flex items-center gap-2"><Clock size={18}/> Update Progress</h3>
@@ -186,21 +278,21 @@ const TicketListPage = () => {
                        <label className="block text-xs font-bold text-gray-500 mb-1">Status Terbaru</label>
                        <select name="status" value={logForm.status} onChange={handleLogChange} className="w-full border rounded p-2 text-sm" required>
                           <option value="Open">Open</option>
-                          <option value="On The Way">On The Way (Perjalanan)</option>
-                          <option value="On Site">On Site (Sampai Lokasi)</option>
-                          <option value="In Progress">In Progress (Pengerjaan)</option>
+                          <option value="On The Way">On The Way</option>
+                          <option value="On Site">On Site</option>
+                          <option value="In Progress">In Progress</option>
                           <option value="Pending">Pending</option>
-                          <option value="Closed">Closed (Selesai)</option>
+                          <option value="Closed">Closed</option>
                        </select>
                     </div>
 
                     <div>
-                       <label className="block text-xs font-bold text-gray-500 mb-1">Catatan / Laporan</label>
-                       <textarea name="deskripsi" value={logForm.deskripsi} onChange={handleLogChange} rows="3" className="w-full border rounded p-2 text-sm" placeholder="Contoh: Sudah sampai site, sedang pengecekan..." required></textarea>
+                       <label className="block text-xs font-bold text-gray-500 mb-1">Catatan</label>
+                       <textarea name="deskripsi" value={logForm.deskripsi} onChange={handleLogChange} rows="3" className="w-full border rounded p-2 text-sm" placeholder="Catatan progress..." required></textarea>
                     </div>
 
                     <div>
-                       <label className="block text-xs font-bold text-gray-500 mb-1">Upload Foto Evident (Opsional)</label>
+                       <label className="block text-xs font-bold text-gray-500 mb-1">Evident (Opsional)</label>
                        <div className="flex items-center gap-2">
                           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
                           {logForm.image && <CheckCircle size={16} className="text-green-500"/>}
@@ -214,14 +306,14 @@ const TicketListPage = () => {
                )}
             </div>
 
-            {/* KANAN: TIMELINE / RIWAYAT (WORKLOG) */}
+            {/* KANAN: TIMELINE */}
             <div className="w-full md:w-1/2 p-6 overflow-y-auto bg-white relative">
                <button onClick={() => setIsLogModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500">
                   <X size={24} />
                </button>
 
                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Clock className="text-green-600"/> Riwayat Pengerjaan
+                  <Clock className="text-green-600"/> Riwayat
                </h3>
 
                <div className="space-y-6">
@@ -230,15 +322,12 @@ const TicketListPage = () => {
                   ) : (
                      logs.map((log) => (
                         <div key={log.id} className="relative pl-8 border-l-2 border-gray-200 last:border-0">
-                           {/* Dot Timeline */}
                            <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ${
                               log.status === 'Closed' ? 'bg-green-500' : 'bg-blue-500'
                            }`}></div>
 
                            <div className="mb-1 flex items-center gap-2">
-                              <span className="text-xs font-bold bg-gray-100 px-2 py-0.5 rounded text-gray-700">
-                                 {log.status}
-                              </span>
+                              <span className="text-xs font-bold bg-gray-100 px-2 py-0.5 rounded text-gray-700">{log.status}</span>
                               <span className="text-xs text-gray-400">
                                  {new Date(log.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
                               </span>
@@ -247,12 +336,12 @@ const TicketListPage = () => {
                            <p className="text-sm text-gray-800 mb-2">{log.deskripsi}</p>
                            <p className="text-xs text-gray-400 italic mb-2">Oleh: {log.user?.name || 'Unknown'}</p>
 
-                           {/* Tampilkan Foto Jika Ada */}
+                           {/* FOTO EVIDENT */}
                            {log.image_path && (
                               <div className="mt-2">
-                                 <a href={`http://127.0.0.1:8000/${log.image_path}`} target="_blank" rel="noreferrer">
+                                 <a href={`${API_BASE_URL}/${log.image_path}`} target="_blank" rel="noreferrer">
                                     <img 
-                                       src={`http://127.0.0.1:8000/${log.image_path}`} 
+                                       src={`${API_BASE_URL}/${log.image_path}`} 
                                        alt="Evident" 
                                        className="w-32 h-24 object-cover rounded border hover:scale-105 transition cursor-pointer"
                                     />
