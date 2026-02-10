@@ -49,7 +49,7 @@ const LoginPage = () => {
       
       // Pastikan user.role ada, jika tidak, default ke 'teknisi' agar tidak error
       localStorage.setItem('role', user.role || 'teknisi'); 
-      localStorage.setItem('user_name', user.name);
+      localStorage.setItem('name', user.name);
       
       console.log("5. Penyimpanan Berhasil. Redirecting...");
       
