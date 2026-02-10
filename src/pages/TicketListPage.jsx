@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
   Ticket, Edit, Trash2, Search, X, ChevronLeft, ChevronRight, 
-  Save, Clock, CheckCircle
+  Save, Clock, CheckCircle, Network // <--- Icon Network Ditambahkan
 } from 'lucide-react';
 
 // --- KONFIGURASI URL ---
-// Ganti dengan IP Laptop Anda yang aktif (cek ipconfig)
 const API_BASE_URL = 'http://192.168.100.126:8000'; 
 
 const TicketListPage = () => {
@@ -22,24 +21,23 @@ const TicketListPage = () => {
   const [selectedTicket, setSelectedTicket] = useState(null); 
   const [logs, setLogs] = useState([]); 
   
-  // Form Input Worklog Baru
+  // Form Input Worklog Baru (UPDATE: Tambah field odp, odc, ftm)
   const [logForm, setLogForm] = useState({
     status: '',
     deskripsi: '',
+    odp: '', 
+    odc: '', 
+    ftm: '', 
     image: null
   });
   const fileInputRef = useRef(null);
 
-  // --- 1. FETCH DATA TIKET (DIPERBAIKI) ---
+  // --- 1. FETCH DATA TIKET ---
   const fetchTickets = async (url) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const params = search ? { search } : {};
-      
-      // Gunakan URL yang diberikan pagination, atau default ke API local
-      // Jika url cuma '/tickets', axios base URL di main.jsx akan menanganinya
-      // Jika url lengkap (http://...), axios akan pakai itu
       const endpoint = url || `${API_BASE_URL}/api/tickets`; 
 
       const response = await axios.get(endpoint, { 
@@ -64,11 +62,12 @@ const TicketListPage = () => {
     fetchTickets();
   };
 
-  // --- 3. BUKA MODAL WORKLOG ---
+  // --- 3. BUKA MODAL WORKLOG (UPDATE: Load data segmentasi lama) ---
   const handleOpenLogModal = async (ticketId) => {
     setIsLogModalOpen(true);
     setLogs([]); 
-    setLogForm({ status: '', deskripsi: '', image: null }); 
+    // Reset form termasuk field segmentasi
+    setLogForm({ status: '', deskripsi: '', odp: '', odc: '', ftm: '', image: null }); 
 
     try {
       const token = localStorage.getItem('token');
@@ -76,9 +75,18 @@ const TicketListPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setSelectedTicket(res.data.data);
-      setLogs(res.data.data.logs || []);
-      setLogForm(prev => ({ ...prev, status: res.data.data.status }));
+      const ticketData = res.data.data;
+      setSelectedTicket(ticketData);
+      setLogs(ticketData.logs || []);
+      
+      // Isi default form dengan data terakhir (agar teknisi tidak perlu ketik ulang jika sudah ada)
+      setLogForm(prev => ({ 
+        ...prev, 
+        status: ticketData.status,
+        odp: ticketData.odp || '',
+        odc: ticketData.odc || '',
+        ftm: ticketData.ftm || ''
+      }));
 
     } catch (error) {
       console.error("Gagal load detail", error);
@@ -94,7 +102,7 @@ const TicketListPage = () => {
     setLogForm({ ...logForm, image: e.target.files[0] });
   };
 
-  // --- 5. SUBMIT WORKLOG BARU ---
+  // --- 5. SUBMIT WORKLOG BARU (UPDATE: Append data segmentasi) ---
   const handleSubmitLog = async (e) => {
     e.preventDefault();
     if (!logForm.status || !logForm.deskripsi) return alert("Status dan Deskripsi wajib diisi!");
@@ -104,6 +112,12 @@ const TicketListPage = () => {
       const formData = new FormData();
       formData.append('status', logForm.status);
       formData.append('deskripsi', logForm.deskripsi);
+      
+      // Kirim Data Segmentasi
+      formData.append('odp', logForm.odp);
+      formData.append('odc', logForm.odc);
+      formData.append('ftm', logForm.ftm);
+
       if (logForm.image) {
         formData.append('image', logForm.image);
       }
@@ -165,8 +179,8 @@ const TicketListPage = () => {
       {/* TABEL DATA */}
       <div className="bg-white rounded-xl shadow border overflow-hidden">
         
-        {/* WRAPPER SCROLL (Tanpa Sticky) */}
-        <div className="overflow-x-auto pb-2"> {/* pb-2 agar scrollbar tidak terlalu mepet */}
+        {/* WRAPPER SCROLL */}
+        <div className="overflow-x-auto pb-2"> 
           
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-gray-100 text-gray-600 uppercase font-semibold">
@@ -176,7 +190,7 @@ const TicketListPage = () => {
                 <th className="p-4">Site / Lokasi</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Petugas</th>
-                <th className="p-4 text-center">Aksi</th> {/* Tidak ada Sticky */}
+                <th className="p-4 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -192,6 +206,15 @@ const TicketListPage = () => {
                     <td className="p-4">
                       <div className="font-bold">{ticket.site_name}</div>
                       <div className="text-xs text-gray-500">{ticket.site_id}</div>
+                      
+                      {/* TAMPILAN DATA SEGMENTASI DI TABEL (Jika Ada) */}
+                      {(ticket.odp || ticket.odc) && (
+                        <div className="text-[10px] text-blue-500 mt-1 flex gap-1">
+                           {ticket.odp && <span className="bg-blue-50 px-1 rounded border border-blue-100">ODP: {ticket.odp}</span>}
+                           {ticket.odc && <span className="bg-blue-50 px-1 rounded border border-blue-100">ODC: {ticket.odc}</span>}
+                        </div>
+                      )}
+
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-bold ${
@@ -205,7 +228,6 @@ const TicketListPage = () => {
                       {ticket.petugas}
                     </td>
 
-                    {/* KOLOM AKSI (BIASA / TIDAK STICKY) */}
                     <td className="p-4 flex justify-center gap-2">
                       <button 
                         onClick={() => handleOpenLogModal(ticket.id)}
@@ -253,7 +275,7 @@ const TicketListPage = () => {
         </div>
       </div>
 
-      {/* --- MODAL WORKLOG (SAMA SEPERTI SEBELUMNYA) --- */}
+      {/* --- MODAL WORKLOG --- */}
       {isLogModalOpen && selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 md:p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden">
@@ -262,12 +284,18 @@ const TicketListPage = () => {
             <div className="w-full md:w-1/2 p-6 overflow-y-auto border-r bg-gray-50">
                <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-800">{selectedTicket.nomor_internal}</h2>
-                  <div className="text-sm text-gray-500">{selectedTicket.site_name}</div>
+                  <div className="text-sm text-gray-500">{selectedTicket.site_id} - {selectedTicket.site_name}</div>
                </div>
 
                <div className="bg-white p-4 rounded-lg border mb-6 text-sm space-y-2">
                   <p><span className="font-semibold">Deskripsi:</span> {selectedTicket.deskripsi}</p>
                   <p><span className="font-semibold">Petugas:</span> {selectedTicket.petugas}</p>
+               </div>
+               <div className='bg-white p-4 rounded-lg border mb-6 text-sm space-y-2'>
+                  <p><span className="font-semibold">Segmentasi Saat Ini:</span></p>
+                  <p>ODP: {selectedTicket.odp || '-'}</p>
+                  <p>ODC: {selectedTicket.odc || '-'}</p>
+                  <p>FTM: {selectedTicket.ftm || '-'}</p>
                </div>
 
                {(selectedTicket.status !== 'Closed' || userRole === 'admin') && (
@@ -285,6 +313,37 @@ const TicketListPage = () => {
                           <option value="Closed">Closed</option>
                        </select>
                     </div>
+
+                    {/* --- INPUT SEGMENTASI (ODP - ODC - FTM) --- */}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-2 flex items-center gap-1">
+                        <Network size={14}/> Data Segmentasi (Opsional)
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                         <div>
+                            <input 
+                              type="text" name="odp" placeholder="ODP" 
+                              value={logForm.odp} onChange={handleLogChange} 
+                              className="w-full border rounded p-2 text-xs uppercase focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                         </div>
+                         <div>
+                            <input 
+                              type="text" name="odc" placeholder="ODC" 
+                              value={logForm.odc} onChange={handleLogChange} 
+                              className="w-full border rounded p-2 text-xs uppercase focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                         </div>
+                         <div>
+                            <input 
+                              type="text" name="ftm" placeholder="FTM" 
+                              value={logForm.ftm} onChange={handleLogChange} 
+                              className="w-full border rounded p-2 text-xs uppercase focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                         </div>
+                      </div>
+                    </div>
+                    {/* ----------------------------------------- */}
 
                     <div>
                        <label className="block text-xs font-bold text-gray-500 mb-1">Catatan</label>
