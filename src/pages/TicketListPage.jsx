@@ -188,6 +188,7 @@ const TicketListPage = () => {
                 <th className="p-4">No. Tiket</th>
                 <th className="p-4">Unit</th>
                 <th className="p-4">Site / Lokasi</th>
+                <th className="p-4">SA</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Petugas</th>
                 <th className="p-4 text-center">Aksi</th>
@@ -216,6 +217,7 @@ const TicketListPage = () => {
                       )}
 
                     </td>
+                    <td className="p-4">{ticket.sa || '-'}</td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                         ticket.status === 'Open' ? 'bg-green-100 text-green-700' : 

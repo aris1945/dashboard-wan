@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-// Pastikan import icon lengkap
 import { Ticket, Send, AlertCircle, CheckCircle, Search, User, X, MapPin } from 'lucide-react';
 
 const CreateTicketPage = () => {
@@ -10,6 +9,7 @@ const CreateTicketPage = () => {
     nomor_sistem: '',
     unit: '',      
     jenis: '',
+    sa: '', // <-- Ganti STO menjadi SA
     site_name: '',
     site_id: '', 
     deskripsi: '',
@@ -18,6 +18,7 @@ const CreateTicketPage = () => {
   // --- STATE DATA ---
   const [sitesList, setSitesList] = useState([]); 
   const [spbuList, setSpbuList] = useState([]);   
+  const [saList, setSaList] = useState([]); // State untuk menampung data SA
   
   // --- STATE UI ---
   const [showSiteDropdown, setShowSiteDropdown] = useState(false);
@@ -31,10 +32,10 @@ const CreateTicketPage = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
   
-  // --- REFS (PENTING: JANGAN SAMPAI HILANG) ---
+  // --- REFS ---
   const techDropdownRef = useRef(null);
   const techInputRef = useRef(null);
-  const siteDropdownRef = useRef(null); // <--- INI YANG SEBELUMNYA HILANG/ERROR
+  const siteDropdownRef = useRef(null);
 
   // --- 1. FETCH DATA ---
   useEffect(() => {
@@ -43,42 +44,66 @@ const CreateTicketPage = () => {
         const token = localStorage.getItem('token');
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Ambil Nomor Tiket
+        // 1. Ambil Nomor Tiket
         try {
             const ticketRes = await axios.get('http://192.168.100.126:8000/api/tickets/next-number', { headers });
             setFormData(prev => ({ ...prev, nomor_internal: ticketRes.data.ticket_number }));
-        } catch (e) { console.error(e); setFormData(prev => ({ ...prev, nomor_internal: 'Error' })); }
+        } catch (e) { 
+            console.error(e); 
+            setFormData(prev => ({ ...prev, nomor_internal: 'Error' })); 
+        }
 
-        // Ambil Sites
+        // 2. Ambil Sites (CNOP)
         const sitesRes = await axios.get('http://192.168.100.126:8000/api/sites?per_page=10000', { headers });
         setSitesList(sitesRes.data.data.data || sitesRes.data.data || []);
 
-        // Ambil SPBU
+        // 3. Ambil SPBU
         const spbuRes = await axios.get('http://192.168.100.126:8000/api/spbu?per_page=10000', { headers });
         setSpbuList(spbuRes.data.data.data || spbuRes.data.data || []);
 
-        // Ambil Teknisi
+        // 4. Ambil Teknisi
         const teknisiRes = await axios.get('http://192.168.100.126:8000/api/users/teknisi', { headers });
         const dataTeknisi = teknisiRes.data.data || teknisiRes.data || [];
         if (Array.isArray(dataTeknisi)) setTeknisiList(dataTeknisi);
 
+        // 5. Ambil SA (Service Area) dari Database
+        try {
+            console.log("Mengambil Data SA..."); // Cek Console browser
+            const saRes = await axios.get('http://192.168.100.126:8000/api/sa', { headers });
+            
+            console.log("Response SA:", saRes.data); // Cek apakah data masuk?
+
+            // Logika pembacaan data yang lebih aman
+            let resultSA = [];
+            if (Array.isArray(saRes.data.data)) {
+                resultSA = saRes.data.data; // Format standard wrapper { status: true, data: [...] }
+            } else if (Array.isArray(saRes.data)) {
+                resultSA = saRes.data; // Format langsung array [...]
+            }
+            
+            setSaList(resultSA);
+        } catch (e) { 
+            console.error("Gagal ambil data SA:", e); 
+            // Jangan biarkan saList kosong tanpa jejak, opsional bisa set alert
+        }
+
       } catch (error) {
-        console.error("Gagal memuat data", error);
+        console.error("Gagal memuat data utama", error);
       }
     };
+    
     fetchData();
 
-    // Click Outside Listener
+    // --- CLICK OUTSIDE LISTENER ---
     const handleClickOutside = (event) => {
-      // Cek Dropdown Teknisi
       if (techDropdownRef.current && !techDropdownRef.current.contains(event.target)) {
         setShowTechDropdown(false);
       }
-      // Cek Dropdown Site (Pastikan siteDropdownRef sudah didefinisikan di atas)
       if (siteDropdownRef.current && !siteDropdownRef.current.contains(event.target)) {
         setShowSiteDropdown(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -147,7 +172,7 @@ const CreateTicketPage = () => {
     setSelectedTeknisi([...selectedTeknisi, tech]);
     setTechSearchTerm('');
     setShowTechDropdown(false);
-    techInputRef.current?.focus();
+    setTimeout(() => techInputRef.current?.focus(), 100); 
   };
 
   const removeTeknisi = (id) => setSelectedTeknisi(selectedTeknisi.filter(t => t.id !== id));
@@ -172,11 +197,18 @@ const CreateTicketPage = () => {
       
       setStatus({ type: 'success', message: 'Tiket berhasil dibuat!' });
       
-      // Reset
-      setFormData({ nomor_internal: 'Updating...', nomor_sistem: '', unit: '', jenis: '', site_name: '', site_id: '', deskripsi: '' });
+      setFormData({ 
+        nomor_internal: 'Updating...', 
+        nomor_sistem: '', 
+        unit: '', 
+        jenis: '', 
+        sa: '', // Reset SA
+        site_name: '', 
+        site_id: '', 
+        deskripsi: '' 
+      });
       setSelectedTeknisi([]);
       
-      // Refresh nomor tiket
       const ticketRes = await axios.get('http://192.168.100.126:8000/api/tickets/next-number', { headers: { Authorization: `Bearer ${token}` } });
       setFormData(prev => ({ ...prev, nomor_internal: ticketRes.data.ticket_number }));
 
@@ -189,7 +221,7 @@ const CreateTicketPage = () => {
 
   // --- 6. RENDER UI ---
   return (
-    <div className="max-w-4xl mx-auto pb-10">
+    <div className="max-w-4xl mx-auto pb-10 p-4">
       <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
         <Ticket className="text-blue-600" /> Buat Tiket / Order Baru
       </h1>
@@ -216,7 +248,7 @@ const CreateTicketPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Unit</label>
               <select name="unit" value={formData.unit} onChange={handleChange} required className="w-full px-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500">
@@ -234,11 +266,40 @@ const CreateTicketPage = () => {
                 <option value="Maintenance">Maintenance</option>
               </select>
             </div>
+            
+            {/* DROPDOWN SA (SERVICE AREA) DINAMIS */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Service Area (SA)</label>
+              <select 
+                name="sa" 
+                value={formData.sa} 
+                onChange={handleChange} 
+                className="w-full px-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+              >
+                 <option value="">-- Pilih SA --</option>
+                 
+                 {/* Logic Rendering: */}
+                 {saList.length > 0 ? (
+                    // Jika data ada
+                    saList.map((item, index) => (
+                      <option key={index} value={item.sa_code}>
+                        {item.sa_name}
+                      </option>
+                    ))
+                 ) : (
+                    // Jika data kosong atau masih loading
+                    <option value="" disabled>
+                        {loading ? "Loading..." : "Data SA Kosong / Gagal Load"}
+                    </option>
+                 )}
+              </select>
+            </div>
+
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* SITE INPUT */}
+            {/* SITE INPUT SEARCHABLE */}
             <div className="relative" ref={siteDropdownRef}>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 {formData.unit === 'SPBU' ? 'Lokasi SPBU' : 'Lokasi Site'}
@@ -248,8 +309,11 @@ const CreateTicketPage = () => {
                 <input
                   type="text"
                   name="site_name"
-                  value={`${formData.site_id} - ${formData.site_name}`}
-                  onChange={handleChange}
+                  value={formData.unit ? `${formData.site_id ? formData.site_id + ' - ' : ''}${formData.site_name}` : ''}
+                  onChange={(e) => {
+                     setFormData({...formData, site_name: e.target.value});
+                     if(!showSiteDropdown) setShowSiteDropdown(true);
+                  }}
                   onFocus={() => setShowSiteDropdown(true)}
                   disabled={!formData.unit}
                   placeholder={!formData.unit ? "Pilih Unit Dulu..." : "Ketik nama site / ID..."}
@@ -258,6 +322,7 @@ const CreateTicketPage = () => {
                   className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
                 />
               </div>
+              
               {showSiteDropdown && formData.unit && (
                 <div className="absolute z-20 w-full bg-white border rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto">
                   {filteredSites.length > 0 ? (
@@ -267,23 +332,37 @@ const CreateTicketPage = () => {
                         <span className="text-xs text-gray-500">ID: {formData.unit === 'CNOP' ? item.site_id : item.kode_spbu}</span>
                       </div>
                     ))
-                  ) : (<div className="p-4 text-center text-gray-500 text-sm">Tidak ditemukan.</div>)}
+                  ) : (
+                    <div className="p-4 text-center text-gray-500 text-sm">Tidak ditemukan.</div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* TEKNISI INPUT */}
+            {/* TEKNISI INPUT MULTI-SELECT */}
             <div className="relative" ref={techDropdownRef}>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Petugas / Teknisi</label>
-              <div className="w-full min-h-[46px] px-2 py-2 border rounded-lg focus-within:ring-2 focus-within:ring-blue-500 bg-white flex flex-wrap gap-2 items-center cursor-text" onClick={() => techInputRef.current?.focus()}>
+              <div 
+                className="w-full min-h-[46px] px-2 py-2 border rounded-lg focus-within:ring-2 focus-within:ring-blue-500 bg-white flex flex-wrap gap-2 items-center cursor-text" 
+                onClick={() => techInputRef.current?.focus()}
+              >
                 {selectedTeknisi.map((tech) => (
                   <div key={tech.id} className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1">
                     {tech.name}
                     <button type="button" onClick={(e) => { e.stopPropagation(); removeTeknisi(tech.id); }} className="hover:bg-blue-200 rounded-full p-0.5"><X size={14} /></button>
                   </div>
                 ))}
-                <input ref={techInputRef} type="text" value={techSearchTerm} onChange={(e) => setTechSearchTerm(e.target.value)} onFocus={() => setShowTechDropdown(true)} placeholder={selectedTeknisi.length===0?"Cari petugas...":""} className="flex-1 min-w-[100px] outline-none bg-transparent text-sm h-8" />
+                <input 
+                  ref={techInputRef} 
+                  type="text" 
+                  value={techSearchTerm} 
+                  onChange={(e) => setTechSearchTerm(e.target.value)} 
+                  onFocus={() => setShowTechDropdown(true)} 
+                  placeholder={selectedTeknisi.length === 0 ? "Cari petugas..." : ""} 
+                  className="flex-1 min-w-[100px] outline-none bg-transparent text-sm h-8" 
+                />
               </div>
+              
               {showTechDropdown && (
                 <div className="absolute z-20 w-full bg-white border rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto">
                   {filteredTeknisi.length > 0 ? (
@@ -293,19 +372,21 @@ const CreateTicketPage = () => {
                         <div><p className="text-sm font-bold text-gray-800">{tech.name}</p><p className="text-xs text-gray-500">NIK: {tech.nik}</p></div>
                       </div>
                     ))
-                  ) : (<div className="p-4 text-center text-gray-500 text-sm">Tidak ditemukan.</div>)}
+                  ) : (
+                    <div className="p-4 text-center text-gray-500 text-sm">Tidak ditemukan.</div>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Deskripsi</label>
-            <textarea name="deskripsi" value={formData.deskripsi} onChange={handleChange} rows="4" required className="w-full px-4 py-2 border rounded-lg"></textarea>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Masalah</label>
+            <textarea name="deskripsi" value={formData.deskripsi} onChange={handleChange} rows="4" required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Jelaskan detail pekerjaan atau kendala..."></textarea>
           </div>
 
           <div className="flex justify-end pt-4">
-            <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition flex items-center gap-2 shadow-lg">
+            <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition flex items-center gap-2 shadow-lg disabled:opacity-50">
               {loading ? 'Mengirim...' : <><Send size={18}/> Buat Tiket</>}
             </button>
           </div>

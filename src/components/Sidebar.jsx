@@ -8,18 +8,18 @@ import {
 
 // --- DATA MENU ---
 const MENU_ITEMS = [
-  { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} />, allowedRoles: ['admin', 'helpdesk', 'teknisi'] },
+  { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} />, allowedRoles: ['admin', 'helpdesk', 'teknisi','hsa','korlap'] },
   
   // TICKET SYSTEM
   { 
     name: 'Ticket System', 
     icon: <Ticket size={20} />,
     // Parent boleh diakses semua, tapi anaknya nanti difilter
-    allowedRoles: ['admin', 'helpdesk', 'teknisi'], 
+    allowedRoles: ['admin', 'helpdesk', 'teknisi','hsa','korlap'], 
     submenu: [
       // Teknisi TIDAK ADA di sini, jadi otomatis tersembunyi
       { name: 'Buat Tiket', path: '/tickets/create', icon: <PlusCircle size={18} />, allowedRoles: ['admin', 'helpdesk'] },
-      { name: 'List Tiket', path: '/tickets', icon: <ListChecks size={18} />, allowedRoles: ['admin', 'helpdesk', 'teknisi'] },
+      { name: 'List Tiket', path: '/tickets', icon: <ListChecks size={18} />, allowedRoles: ['admin', 'helpdesk', 'teknisi','hsa','korlap'] },
     ]
   },
 
