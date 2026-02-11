@@ -22,15 +22,22 @@ const DashboardPage = () => {
   const isDarkMode = document.documentElement.classList.contains('dark');
 
   // Fungsi Hitung Durasi TTR
-  const calculateDuration = (start, end) => {
-    if (!start) return "-";
-    const startTime = new Date(start);
-    const endTime = end ? new Date(end) : new Date();
-    const diffInMs = endTime - startTime;
-    const hours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60));
-    return hours > 0 ? `${hours}j ${minutes}m` : `${minutes}m`;
-  };
+  const calculateDuration = (created_at, closed_at) => {
+    const start = new Date(created_at);
+    // Jika closed_at ada, pakai itu. Jika tidak (masih null), pakai waktu sekarang (Running TTR)
+    const end = closed_at ? new Date(closed_at) : new Date();
+
+    const diff = end - start;
+    
+    // Konversi ke Jam & Menit
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    return `${hours} Jam ${minutes} Menit`;
+};
+
+// Cara Pakai di JSX:
+// <span>Durasi: {calculateDuration(ticket.created_at, ticket.closed_at)}</span>
 
   useEffect(() => {
     const fetchData = async () => {
