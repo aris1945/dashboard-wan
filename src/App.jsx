@@ -26,7 +26,7 @@ import Layout from './components/Layout';
 
 // --- KOMPONEN DUMMY (Untuk Halaman yang Belum Jadi) ---
 const PlaceholderPage = ({ title }) => (
-  <div className="bg-white p-8 rounded-xl shadow border text-center">
+  <div className="p-8 rounded-xl shadow border text-center">
     <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
     <p className="text-gray-500">Halaman ini sedang dalam pengembangan.</p>
   </div>
@@ -95,7 +95,7 @@ const App = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
       {/* --- SIDEBAR SECTION --- */}
       {isMobile && sidebarOpen && (
         <div
@@ -110,7 +110,7 @@ const App = () => {
       {/* --- MAIN CONTENT SECTION --- */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden w-full relative">
         {/* A. GLOBAL HEADER (Navbar) */}
-        <header className="bg-white shadow-sm border-b h-16 flex items-center px-4 justify-between shrink-0 z-20">
+        <header className="shadow-sm border-b h-16 flex items-center px-4 justify-between shrink-0 z-20">
           {/* KIRI: Tombol Toggle Sidebar */}
           <div className="flex items-center gap-3">
             <button
@@ -126,6 +126,7 @@ const App = () => {
 
           {/* KANAN: User Profile & Logout (Dropdown) */}
           <div className="relative" ref={profileRef}>
+            
             <button
               onClick={() => setProfileOpen(!profileOpen)}
               className="flex items-center gap-3 p-1 rounded-lg hover:bg-gray-50 transition focus:outline-none"
@@ -145,7 +146,7 @@ const App = () => {
 
             {/* DROPDOWN MENU */}
             {profileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border z-50 py-1 animation-fade-in">
+              <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-xl border z-50 py-1 animation-fade-in">
                 {/* Info User di Mobile (karena di header disembunyikan) */}
                 <div className="px-4 py-2 border-b md:hidden">
                   <p className="text-sm font-bold text-gray-800">{userName}</p>

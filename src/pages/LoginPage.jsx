@@ -81,7 +81,7 @@ const LoginPage = () => {
             <Wifi className="text-blue-600" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-white tracking-wide">
-            WAN MONITOR
+            Dashboard
           </h2>
           <p className="text-blue-100 mt-2 text-sm">
             Silakan login untuk mengakses dashboard

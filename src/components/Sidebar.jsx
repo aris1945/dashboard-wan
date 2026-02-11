@@ -74,7 +74,7 @@ const Sidebar = ({ isOpen }) => {
 
   return (
     <div 
-      className={`
+      className={`dark:bg-black
         fixed inset-y-0 left-0 z-40 bg-slate-900 text-white 
         transform transition-all duration-300 ease-in-out
         border-r border-slate-700 shadow-xl overflow-y-auto custom-scrollbar
@@ -84,7 +84,7 @@ const Sidebar = ({ isOpen }) => {
       `}
     >
       <div className="flex items-center justify-center h-16 bg-slate-800 border-b border-slate-700 whitespace-nowrap sticky top-0 z-10">
-        <span className="text-xl font-bold tracking-wider text-blue-400">WAN MONITOR</span>
+        <span className="text-xl font-bold tracking-wider text-blue-400">Dashboard</span>
       </div>
 
       <nav className="mt-5 px-3 pb-20 whitespace-nowrap">

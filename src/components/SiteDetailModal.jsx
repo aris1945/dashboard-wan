@@ -4,7 +4,7 @@ const SiteDetailModal = ({ site, onClose }) => {
   if (!site) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
+    <div className="dark:bg-black dark:bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all scale-100">
         {/* Header Modal */}
         <div className="bg-blue-600 px-6 py-4 flex justify-between items-center text-white">
