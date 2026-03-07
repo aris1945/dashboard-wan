@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 // --- KONFIGURASI URL ---
-const API_BASE_URL = 'http://192.168.100.126:8000'; 
+const API_BASE_URL = 'http://35.209.249.82'; 
 
 const TicketListPage = () => {
   // --- STATE UTAMA ---

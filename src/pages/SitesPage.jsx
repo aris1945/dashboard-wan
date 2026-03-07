@@ -18,7 +18,7 @@ const SitesPage = () => {
   // Ref untuk input file hidden
   const fileInputRef = useRef(null);
 
-  const API_URL = 'http://127.0.0.1:8000/api/sites';
+  const API_URL = 'http://35.209.249.82/api/sites';
 
   // --- FUNGSI GET DATA ---
   const fetchSites = async (pageNumber = 1, searchQuery = '') => {

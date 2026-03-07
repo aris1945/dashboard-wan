@@ -36,7 +36,7 @@ const RegisterPage = () => {
 
     try {
       // Sesuaikan URL dengan API Laravel Anda
-      await axios.post('http://192.168.100.126:8000/api/register', {
+      await axios.post('http://35.209.249.82/api/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password

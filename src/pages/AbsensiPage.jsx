@@ -17,7 +17,7 @@ const AbsensiPage = () => {
     setReportData(null);
 
     try {
-      const response = await axios.get('http://192.168.100.126:8000/api/absensi', {
+      const response = await axios.get('http://35.209.249.82/api/absensi', {
         params: { employee_id: employeeId }
       });
       setReportData(response.data);

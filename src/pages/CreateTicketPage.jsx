@@ -46,7 +46,7 @@ const CreateTicketPage = () => {
 
         // 1. Ambil Nomor Tiket
         try {
-            const ticketRes = await axios.get('http://192.168.100.126:8000/api/tickets/next-number', { headers });
+            const ticketRes = await axios.get('http://35.209.249.82/api/tickets/next-number', { headers });
             setFormData(prev => ({ ...prev, nomor_internal: ticketRes.data.ticket_number }));
         } catch (e) { 
             console.error(e); 

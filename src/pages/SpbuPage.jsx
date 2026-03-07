@@ -16,7 +16,7 @@ const SpbuPage = () => {
   const fetchSpbus = async (pageNumber = 1, searchQuery = '') => {
     setLoading(true);
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/spbu', {
+      const response = await axios.get('http://35.209.249.82/api/spbu', {
         params: { page: pageNumber, search: searchQuery }
       });
       setSpbus(response.data.data.data);
