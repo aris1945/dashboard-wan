@@ -18,7 +18,7 @@ const SitesPage = () => {
   // Ref untuk input file hidden
   const fileInputRef = useRef(null);
 
-  const API_URL = 'http://35.209.249.82/api/sites';
+  const API_URL = 'http://35.209.168.114/api/sites';
 
   // --- FUNGSI GET DATA ---
   const fetchSites = async (pageNumber = 1, searchQuery = '') => {
@@ -56,7 +56,7 @@ const SitesPage = () => {
     setUploading(true);
     try {
       // Kirim ke Backend Laravel
-      await axios.post('http://127.0.0.1:8000/api/sites/import', formData, {
+      await axios.post('http://35.209.168.114/api/sites/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           // Jika pakai Auth, axios interceptor di main.jsx akan otomatis handle Token

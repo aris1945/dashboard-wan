@@ -46,7 +46,7 @@ const CreateTicketPage = () => {
 
         // 1. Ambil Nomor Tiket
         try {
-            const ticketRes = await axios.get('http://35.209.249.82/api/tickets/next-number', { headers });
+            const ticketRes = await axios.get('http://35.209.168.114/api/tickets/next-number', { headers });
             setFormData(prev => ({ ...prev, nomor_internal: ticketRes.data.ticket_number }));
         } catch (e) { 
             console.error(e); 
@@ -54,22 +54,22 @@ const CreateTicketPage = () => {
         }
 
         // 2. Ambil Sites (CNOP)
-        const sitesRes = await axios.get('http://192.168.100.126:8000/api/sites?per_page=10000', { headers });
+        const sitesRes = await axios.get('http://35.209.168.114/api/sites?per_page=10000', { headers });
         setSitesList(sitesRes.data.data.data || sitesRes.data.data || []);
 
         // 3. Ambil SPBU
-        const spbuRes = await axios.get('http://192.168.100.126:8000/api/spbu?per_page=10000', { headers });
+        const spbuRes = await axios.get('http://35.209.168.114/api/spbu?per_page=10000', { headers });
         setSpbuList(spbuRes.data.data.data || spbuRes.data.data || []);
 
         // 4. Ambil Teknisi
-        const teknisiRes = await axios.get('http://192.168.100.126:8000/api/users/teknisi', { headers });
+        const teknisiRes = await axios.get('http://35.209.168.114/api/users/teknisi', { headers });
         const dataTeknisi = teknisiRes.data.data || teknisiRes.data || [];
         if (Array.isArray(dataTeknisi)) setTeknisiList(dataTeknisi);
 
         // 5. Ambil SA (Service Area) dari Database
         try {
             console.log("Mengambil Data SA..."); // Cek Console browser
-            const saRes = await axios.get('http://192.168.100.126:8000/api/sa', { headers });
+            const saRes = await axios.get('http://35.209.168.114/api/sa', { headers });
             
             console.log("Response SA:", saRes.data); // Cek apakah data masuk?
 
@@ -191,7 +191,7 @@ const CreateTicketPage = () => {
       const payload = { ...formData, petugas: petugasString };
       
       const token = localStorage.getItem('token');
-      await axios.post('http://192.168.100.126:8000/api/tickets', payload, {
+      await axios.post('http://35.209.168.114/api/tickets', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -209,7 +209,7 @@ const CreateTicketPage = () => {
       });
       setSelectedTeknisi([]);
       
-      const ticketRes = await axios.get('http://192.168.100.126:8000/api/tickets/next-number', { headers: { Authorization: `Bearer ${token}` } });
+      const ticketRes = await axios.get('http://35.209.168.114/api/tickets/next-number', { headers: { Authorization: `Bearer ${token}` } });
       setFormData(prev => ({ ...prev, nomor_internal: ticketRes.data.ticket_number }));
 
     } catch (error) {

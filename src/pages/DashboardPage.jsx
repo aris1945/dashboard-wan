@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://35.209.249.82'; 
+const API_BASE_URL = 'http://35.209.168.114'; 
 
 const DashboardPage = () => {
   const navigate = useNavigate();

@@ -9,14 +9,14 @@ const SpbuPage = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [uploading, setUploading] = useState(false);
-  
+
   // Ref untuk input file hidden
   const fileInputRef = useRef(null);
 
   const fetchSpbus = async (pageNumber = 1, searchQuery = '') => {
     setLoading(true);
     try {
-      const response = await axios.get('http://35.209.249.82/api/spbu', {
+      const response = await axios.get('http://35.209.168.114/api/spbu', {
         params: { page: pageNumber, search: searchQuery }
       });
       setSpbus(response.data.data.data);
@@ -44,7 +44,7 @@ const SpbuPage = () => {
 
     setUploading(true);
     try {
-      await axios.post('http://127.0.0.1:8000/api/spbu/import', formData, {
+      await axios.post('http://35.209.168.114/api/spbu/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert('Import Berhasil!');
@@ -63,7 +63,7 @@ const SpbuPage = () => {
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <Fuel className="text-red-600" /> Data SPBU
         </h1>
-        
+
         <div className="flex gap-3 w-full md:w-auto">
           {/* Input Search */}
           <div className="relative flex-1 md:w-64">
@@ -77,7 +77,7 @@ const SpbuPage = () => {
             />
           </div>
 
-          
+
         </div>
       </div>
 
@@ -104,25 +104,25 @@ const SpbuPage = () => {
                     <td className="p-4 font-medium text-gray-800">{item.nama_spbu}</td>
                     <td className="p-4 font-mono text-xs">{item.ip_address || '-'}</td>
                     <td className="p-4">
-                        <span className="block font-bold text-xs">{item.area}</span>
-                        <span className="text-xs text-gray-500">{item.so}</span>
+                      <span className="block font-bold text-xs">{item.area}</span>
+                      <span className="text-xs text-gray-500">{item.so}</span>
                     </td>
                     <td className="p-4 max-w-xs truncate" title={item.alamat}>
-                        {item.alamat}
-                        {item.latitude && (
-                           <a 
-                             href={`https://maps.google.com/?q=${item.latitude}`} 
-                             target="_blank" 
-                             className="block text-blue-500 text-xs mt-1 hover:underline flex items-center gap-1"
-                           >
-                             <MapPin size={10}/> Maps
-                           </a>
-                        )}
+                      {item.alamat}
+                      {item.latitude && (
+                        <a
+                          href={`https://maps.google.com/?q=${item.latitude}`}
+                          target="_blank"
+                          className="block text-blue-500 text-xs mt-1 hover:underline flex items-center gap-1"
+                        >
+                          <MapPin size={10} /> Maps
+                        </a>
+                      )}
                     </td>
                     <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${item.tipe_spbu === 'COCO' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-                            {item.tipe_spbu}
-                        </span>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${item.tipe_spbu === 'COCO' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                        {item.tipe_spbu}
+                      </span>
                     </td>
                   </tr>
                 ))
@@ -132,12 +132,12 @@ const SpbuPage = () => {
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination */}
         <div className="p-4 bg-gray-50 border-t flex justify-between">
-            <button disabled={page===1} onClick={() => fetchSpbus(page-1, search)} className="px-3 py-1 bg-white border rounded disabled:opacity-50">Prev</button>
-            <span className="text-sm">Halaman {page} dari {totalPages}</span>
-            <button disabled={page===totalPages} onClick={() => fetchSpbus(page+1, search)} className="px-3 py-1 bg-white border rounded disabled:opacity-50">Next</button>
+          <button disabled={page === 1} onClick={() => fetchSpbus(page - 1, search)} className="px-3 py-1 bg-white border rounded disabled:opacity-50">Prev</button>
+          <span className="text-sm">Halaman {page} dari {totalPages}</span>
+          <button disabled={page === totalPages} onClick={() => fetchSpbus(page + 1, search)} className="px-3 py-1 bg-white border rounded disabled:opacity-50">Next</button>
         </div>
       </div>
     </div>

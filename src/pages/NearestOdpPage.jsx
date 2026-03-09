@@ -45,7 +45,7 @@ const NearestOdpPage = () => {
     setHasSearched(true);
 
     try {
-      const response = await axios.get('http://35.209.249.82/api/odp-nearest', {
+      const response = await axios.get('http://35.209.168.114/api/odp-nearest', {
         params: { lat: lat, long: long }
       });
 

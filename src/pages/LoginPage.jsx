@@ -19,7 +19,7 @@ const LoginPage = () => {
     try {
       console.log("1. Mengirim Login...", { nik, password });
 
-      const response = await axios.post('http://35.209.249.82/api/login', {
+      const response = await axios.post('http://35.209.168.114/api/login', {
         nik: nik,
         password: password
       });
